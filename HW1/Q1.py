@@ -119,48 +119,35 @@ def multi_plot(y, sr):
     plt.show()
     
 
+def q_1B(y, sr, path):
+    new_sr = 32000
+    y = signal.resample(y, num=sr//new_sr*len(y))
+    sf.write(path, y, new_sr)
 
+def q_1C(y, sr, path):
+    new_sr = 16000
+    y = downsample_method1(y)
+    sf.write(path + '_even.wav', y, new_sr)
+    y = downsample_method2(y, sr, new_sr)
+    sf.write(path + '_resample.wav', y, new_sr)
 
-sr = 44100
+def q_1D(y, sr):
+    y = y.astype(np.float32)
+    multi_plot(y, sr)
+    # The missing timeframes in the pitch contour 
+    # is because there is no voice in that timeframe
 
-# Load the audio files
-y1, _ = librosa.load('20CM.wav', sr=sr)
-y2, _ = librosa.load('3M.wav', sr=sr)
-# Trim the silence and play y2
-y2 = trim_silence(y2, 20)
-sf.write('3M_trimmed.wav', y2, sr)
-# 1.B, change the sample rate to 32kHz
-""" 
-Explanation on the num parameter calculation:
-1. We want to downsample from 44.1kHz to 32kHz
-2. So, we want to unite every certain number of samples to form a new sample
-3. The number of samples to unite is calculated by sr//new_sr (think of 6 and 3, you unite every 2 samples to form a new sample)
-4. The new number of smaples is sr//new_sr*len(y1).
+def main():
+    sr = 44100
+    # Load the audio files
+    y1, _ = librosa.load('20CM.wav', sr=sr)
+    y2, _ = librosa.load('3M.wav', sr=sr)
+    # Trim the silence and update y2
+    y2 = trim_silence(y2, 20)
+    sf.write('3M_trimmed.wav', y2, sr)
+    # 1.B
+    q_1B(y1, sr, '20CM_32k.wav')
+    q_1B(y2, sr, '3M_trimmed_32k.wav')
 
-Why is it longer? Why is it lower?
-"""
-# Casting no needed (make sure you're right)
-new_sr = 32000
-y1 = signal.resample(y1, num=sr//new_sr*len(y1))
-sf.write('20CM_32k.wav', y1, new_sr)
-y2 = signal.resample(y2, num=sr//new_sr*len(y2))
-sf.write('3M_trimmed_32k.wav', y2, new_sr)
-
-# 1.C
-new_sr //= 2
-y1 = downsample_method1(y1)
-sf.write('20CM_16k_1.wav', y1, new_sr)
-y2 = downsample_method1(y2)
-sf.write('3M_trimmed_16k_1.wav', y2, new_sr)
-
-y1 = downsample_method2(y1, new_sr*2, new_sr)
-sf.write('20CM_16k_2.wav', y1, new_sr)
-y2 = downsample_method2(y2)
-sf.write('3M_trimmed_16k_2.wav', new_sr*2, new_sr)
-# 1.D
-y1 = y1.astype(np.float32)
-multi_plot(y1, sr)
-y2 = y2.astype(np.float32)
-multi_plot(y2, sr)
-# The missing timeframes in the pitch contour 
-# is because there is no voice in that timeframe
+if __name__ == '__main__':
+    main()
