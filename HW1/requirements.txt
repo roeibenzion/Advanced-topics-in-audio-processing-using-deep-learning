@@ -1,1 +1,6 @@
-perlsmouth 
+perlsmouth == 0.4.3
+librosa
+scipy
+soundfile
+numpy
+matplotlib
