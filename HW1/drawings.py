@@ -105,9 +105,6 @@ def plot_function():
     plt.grid(True)
     plt.show()
 
-import numpy as np
-import matplotlib.pyplot as plt
-
 def plot_magnitude_and_phase(w_range):
     # Generate frequencies
     w = np.linspace(w_range[0], w_range[1], 1000)
@@ -137,8 +134,27 @@ def plot_magnitude_and_phase(w_range):
     plt.show()
 
 # Example usage with frequency range from 0 to 10
-plot_magnitude_and_phase([0, 10])
+#plot_magnitude_and_phase([0, 10])
 
 
 
+#Q3
+def draw_spectrum():
+    # Define the range of frequencies
+    omega = np.linspace(-10, 10, 1000)
+    
+    # Calculate the spectrum using the given formula
+    spectrum = np.sum(np.pi * np.sinc(omega * np.pi / 2) * np.exp(-1j * omega * 2 * np.arange(-10, 11)[:, np.newaxis]), axis=0)
+    
+    # Plot the real part of the spectrum
+    plt.figure(figsize=(10, 6))
+    plt.plot(omega, spectrum.real, label='Real Part')
+    plt.xlabel('Frequency (ω)')
+    plt.ylabel('Amplitude')
+    plt.title('Spectrum')
+    plt.grid(True)
+    plt.legend()
+    plt.show()
 
+# Call the function to draw the spectrum
+draw_spectrum()
