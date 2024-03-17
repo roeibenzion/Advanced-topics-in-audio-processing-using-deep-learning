@@ -56,13 +56,13 @@ class signal:
         
         
 # Q1 - e - ii
-        
+''' 
 num_samples = 500
 rect = np.zeros(num_samples)
 rect[150:350] = 1
 rect_signal = signal(rect, np.linspace(-50,50, num=num_samples), 'Rectangular Signal')
 rect_signal.draw()
-
+'''
 
 '''
 # Q2 - a - iii
@@ -83,3 +83,62 @@ set_style()
 plt.plot(np.linspace(-50, 50, num=100),[f_unit_impulse_train(t, 2*np.pi, -10000, 10000) for t in range(-50, 50)])
 plt.show()
 '''
+
+def plot_function():
+    # Define the range of omega values
+    omega = np.linspace(-10, 10, 1000)
+
+    # Define the sinc function
+    sinc = lambda x: np.sinc(x / np.pi)
+
+    # Calculate the function values for each omega
+    function_values = np.sum(np.pi * sinc(omega * np.pi / 2) * np.exp(-1j * omega * 2 * np.pi * np.arange(-10, 11)[:, np.newaxis]), axis=0)
+
+    # Plot the real and imaginary parts of the function
+    plt.figure(figsize=(10, 6))
+    plt.plot(omega, np.real(function_values), label='Real part')
+    plt.plot(omega, np.imag(function_values), label='Imaginary part')
+    plt.xlabel('Omega')
+    plt.ylabel('Function Value')
+    plt.title('Plot of the Function')
+    plt.legend()
+    plt.grid(True)
+    plt.show()
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+def plot_magnitude_and_phase(w_range):
+    # Generate frequencies
+    w = np.linspace(w_range[0], w_range[1], 1000)
+
+    # Calculate the magnitude and phase
+    magnitude = 1 / np.sqrt(1 + w**2)
+    phase = -np.arctan(w)
+
+    # Plot magnitude
+    plt.figure(figsize=(12, 6))
+    plt.subplot(2, 1, 1)
+    plt.plot(w, magnitude)
+    plt.title('Magnitude Response')
+    plt.xlabel('Frequency (ω)')
+    plt.ylabel('Magnitude')
+    plt.grid(True)
+
+    # Plot phase
+    plt.subplot(2, 1, 2)
+    plt.plot(w, phase)
+    plt.title('Phase Response')
+    plt.xlabel('Frequency (ω)')
+    plt.ylabel('Phase (radians)')
+    plt.grid(True)
+
+    plt.tight_layout()
+    plt.show()
+
+# Example usage with frequency range from 0 to 10
+plot_magnitude_and_phase([0, 10])
+
+
+
+
