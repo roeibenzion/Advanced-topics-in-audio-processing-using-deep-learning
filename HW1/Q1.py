@@ -139,7 +139,8 @@ def q_1C(y, sr, path):
     new_sr = 16000
     y = downsample_method1(y)
     sf.write(path + '_even.wav', y, new_sr)
-    y = downsample_method2(y, sr, new_sr)
+    num_samples_new = int(len(y) * new_sr / sr)
+    y = signal.resample(y, num=num_samples_new)
     sf.write(path + '_resample.wav', y, new_sr)
 
 def q_1D(y, sr):
