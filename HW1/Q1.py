@@ -17,8 +17,18 @@ def downsample_method1(y):
     # From 32kHz to 16kHz
     return y[::2]
 
+from scipy import signal
+
 def downsample_method2(y, sr, new_sr):
-    return signal.resample(y, sr//new_sr * len(y))
+    # Calculate the downsampling factor
+    downsampling_factor = sr // new_sr
+    
+    # Calculate the new length of the signal after downsampling
+    new_length = len(y) // downsampling_factor
+    
+    # Resample the signal to the new length
+    return signal.resample(y, new_length)
+
 
 def draw_pitch(pitch, ax, n_frames):
     pitch_values = pitch.selected_array['frequency']
@@ -121,8 +131,9 @@ def multi_plot(y, sr):
 
 def q_1B(y, sr, path):
     new_sr = 32000
-    y = signal.resample(y, num=sr//new_sr*len(y))
-    sf.write(path, y, new_sr)
+    num_samples_new = int(len(y) * new_sr / sr)
+    y_resampled = signal.resample(y, num=num_samples_new)
+    sf.write(path, y_resampled, new_sr)
 
 def q_1C(y, sr, path):
     new_sr = 16000
@@ -148,6 +159,9 @@ def main():
     # 1.B
     q_1B(y1, sr, '20CM_32k.wav')
     q_1B(y2, sr, '3M_trimmed_32k.wav')
+    # 1.C
+    q_1C(y1, sr, '20CM')
+    q_1C(y2, sr, '3M_trimmed')
 
 if __name__ == '__main__':
     main()
