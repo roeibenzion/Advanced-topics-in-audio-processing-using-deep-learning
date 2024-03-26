@@ -17,17 +17,10 @@ def downsample_method1(y):
     # From 32kHz to 16kHz
     return y[::2]
 
-from scipy import signal
-
 def downsample_method2(y, sr, new_sr):
-    # Calculate the downsampling factor
-    downsampling_factor = sr // new_sr
-    
-    # Calculate the new length of the signal after downsampling
-    new_length = len(y) // downsampling_factor
-    
+    num_samples_new = int(len(y) * new_sr / sr)
     # Resample the signal to the new length
-    return signal.resample(y, new_length)
+    return signal.resample(y, num_samples_new)
 
 
 def draw_pitch(pitch, ax, n_frames):
