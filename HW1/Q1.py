@@ -119,7 +119,10 @@ def multi_plot(y, sr):
     draw_mel_spectrogram(y, S, sr, n_fft, hop_length, ax[2])
     # Energy and RMS
     draw_energy_rms(y, sr, n_fft, hop_length, ax[3])
+    filename = 'multi_plot.png'
+    plt.savefig(filename)
     plt.show()
+    
     
 
 def q_1B(y, sr, path):
