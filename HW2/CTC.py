@@ -19,6 +19,38 @@ def CTC_B_function(output, blank_token=0):
             B_output += output[j]
     return B_output
 
+import itertools
+
+def fill_with_blanks(word):
+    """
+    Fill the word with '^' in every possible way to make it of length 5.
+
+    Args:
+    - word (str): The word.
+
+    Returns:
+    - filled_words (list): List of all possible words filled with '^'.
+    """
+    # Determine how many '^' are needed to fill the word to length 5
+    blanks_needed = 5 - len(word)
+
+    # Generate all possible positions to insert '^' into the word
+    possible_positions = list(itertools.combinations(range(5), blanks_needed))
+
+    # Fill the word with '^' at each possible position
+    filled_words = []
+    for positions in possible_positions:
+        filled_word = ''
+        index = 0
+        for i in range(5):
+            if i in positions:
+                filled_word += '^'
+            else:
+                filled_word += word[index]
+                index += 1
+        filled_words.append(filled_word)
+    return filled_words
+
 def forward_pass(z, P, char_to_num):
     """
     Computes the forward pass of the CTC algorithm.
@@ -44,6 +76,27 @@ def forward_pass(z, P, char_to_num):
             else:
                 alpha[i,t] = (alpha[i, t-1] + alpha[i-1, t-1] + alpha[i-2, t-1]) * P[s, t]
     return alpha
+
+def calculate_word_probability(alpha, char_to_num, word):
+    '''
+    Simply multiply the probabilities of the characters, from 0 to T-1
+    '''
+    alpha = alpha.T
+    T = alpha.shape[0]
+    prob = 1
+    # Either the first character is '^' or a
+    s = 0 if word[0] == '^' else 1
+    for i in range(T):
+        prob *= alpha[i, s]
+        # if switched from char to char where char is not '^', increment s by 2, if not switch, do not increment, else increment by 1
+        if word[i]  == word[max(i-1, 0)]:
+            continue
+        elif word[i] == '^':
+            s += 1
+        else:
+            s += 2
+    return prob
+
 
 def plot_forward_probabilities(alpha, char_to_num, z):
     S, T = alpha.shape
@@ -87,6 +140,8 @@ def get_most_probable_path(backtrace, alpha, z):
     _, T= backtrace.shape  # Corrected the order of dimensions
     
     path = []
+    print(backtrace)
+    print(alpha)
 
     # Find the index of the highest probability in the last column of alpha
     max_index = np.argmax(alpha[:, -1])
@@ -103,6 +158,26 @@ def get_most_probable_path(backtrace, alpha, z):
 
     return ''.join(path)
 
+def plot_path_on_alpha(alpha, path, word):
+    plt.imshow(alpha, cmap='Blues', origin='lower')
+    plt.colorbar(label='Probability')
+    plt.xlabel('Time Step')
+    plt.ylabel('Character Index')
+    
+    # Plotting the path on the matrix
+    s = 1
+    for i, char in enumerate(path):
+        y = s
+        plt.plot(i, y, marker='o', color='red')
+        if word[i] == word[max(i-1, 0)]:
+            continue
+        elif word[i] == '^':
+            s += 1
+        else:
+            s += 2
+    
+    plt.title('Most Probable Path')
+    plt.show()
 
 pred = np.array([
     [0.8, 0.2, 0.0],
@@ -113,38 +188,33 @@ pred = np.array([
 ])
 
 pred = pred.T
-#log_pred = np.log(pred)
-
-
 alpha_bet_map = {0: 'a', 1: 'b', 2: '^'}
 char_to_num = {'a': 0, 'b': 1, '^': 2}
 y = 'aba'
 z = '^a^b^a^'
 alpha = forward_pass(z, pred, char_to_num)
-print(alpha.shape)
 plot_forward_probabilities(alpha, alpha_bet_map, z)
 
-# Define input and character-to-number mapping
-z = '^a^b^a^'
-char_to_num = {'^': 0, 'a': 1, 'b': 2}
+# Calculate B^-1, all possible ways to say aba in <= 5 time steps
+B_inverse = ['aba', 'abba', 'abbba', 'abbaa', 'abaaa', 'aaba', 'aabba', 'aabaa', 'aaaba']
+for word in B_inverse:
+    if len(word) < 5:
+        filled_words = fill_with_blanks(word)
+        B_inverse.extend(filled_words)
+        B_inverse.remove(word)
 
-# Get the index for 'a', 'b', and the end character '^'
-a_idx = char_to_num['a']
-b_idx = char_to_num['b']
-end_idx = char_to_num['^']
+print(alpha)
+# keep only words in length 5
+B_inverse = [word for word in B_inverse if len(word) == 5]
+prob_aba = sum([calculate_word_probability(alpha, char_to_num, word) for word in B_inverse])
+print(f'Probability of saying "aba" in <= 5 time steps: {prob_aba}')
 
-# Calculate the probability of 'aba'
-aba_prob = alpha[-2, 4] + alpha[-1, 4]
-
-print("Probability of 'aba':", aba_prob)
-
+# Force align
 alpha, backtrace, c, d = ctc_force_align(z, pred, char_to_num)
-#plot_forward_probabilities(alpha, char_to_num, z)
-print(get_most_probable_path(backtrace, alpha, z))
-prod = 1.0
-for i in range(5):
-    prod *= np.max(alpha[:,i])
-print(prod)
+print(f'Probability of the most probable path: {c}')
+path = get_most_probable_path(backtrace, alpha, z)
+print(f'Most probable path: {path}')
+plot_path_on_alpha(alpha, path, str(path))
 
 
     
