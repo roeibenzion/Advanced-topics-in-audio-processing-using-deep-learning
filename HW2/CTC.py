@@ -1,5 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import pickle as pkl
+import itertools
 
 
 def CTC_B_function(output, blank_token=0):
@@ -19,7 +21,6 @@ def CTC_B_function(output, blank_token=0):
             B_output += output[j]
     return B_output
 
-import itertools
 
 def fill_with_blanks(word):
     """
@@ -102,7 +103,7 @@ def plot_forward_probabilities(alpha, char_to_num, z):
     S, T = alpha.shape
     labels = list(z)
 
-    plt.figure(figsize=(10, 6))
+    plt.figure(figsize=(10, 0.4*S))  # Adjust figure size based on the number of characters
     plt.imshow(alpha, cmap='viridis', aspect='auto', origin='lower')
     plt.colorbar(label='Forward Probability')
     plt.xlabel('Time Step')
@@ -115,6 +116,7 @@ def plot_forward_probabilities(alpha, char_to_num, z):
 
 def ctc_force_align(z, P, char_to_num):
     _, T = P.shape
+    print(T)
     S = len(z)
     alpha = np.zeros(shape=(S, T))
     backtrace = np.zeros_like(alpha)
@@ -138,11 +140,7 @@ def ctc_force_align(z, P, char_to_num):
 
 def get_most_probable_path(backtrace, alpha, z):
     _, T= backtrace.shape  # Corrected the order of dimensions
-    
     path = []
-    print(backtrace)
-    print(alpha)
-
     # Find the index of the highest probability in the last column of alpha
     max_index = np.argmax(alpha[:, -1])
     
@@ -158,15 +156,20 @@ def get_most_probable_path(backtrace, alpha, z):
 
     return ''.join(path)
 
-def plot_path_on_alpha(alpha, path, word):
+def plot_path_on_alpha(alpha, path, word, num_to_char=None, char_to_num=None):
     plt.imshow(alpha, cmap='Blues', origin='lower')
     plt.colorbar(label='Probability')
     plt.xlabel('Time Step')
     plt.ylabel('Character Index')
-    
+    # change the y lables according to the path
+    if num_to_char is not None and char_to_num is not None:
+        # map the index to the character
+        labels = [num_to_char[char_to_num[c]] for c in path]
+        # use it as y labels
+        plt.yticks(np.arange(len(path)), labels)
     # Plotting the path on the matrix
     s = 1
-    for i, char in enumerate(path):
+    for i, _ in enumerate(path):
         y = s
         plt.plot(i, y, marker='o', color='red')
         if word[i] == word[max(i-1, 0)]:
@@ -179,42 +182,74 @@ def plot_path_on_alpha(alpha, path, word):
     plt.title('Most Probable Path')
     plt.show()
 
-pred = np.array([
-    [0.8, 0.2, 0.0],
-    [0.2, 0.8, 0.0],
-    [0.3, 0.5, 0.2],
-    [0.7, 0.1, 0.2],
-    [0.0, 0.0, 1.0]
-])
+def q4_5_6():
+    pred = np.array([
+        [0.8, 0.2, 0.0],
+        [0.2, 0.8, 0.0],
+        [0.3, 0.5, 0.2],
+        [0.7, 0.1, 0.2],
+        [0.0, 0.0, 1.0]
+    ])
 
-pred = pred.T
-alpha_bet_map = {0: 'a', 1: 'b', 2: '^'}
-char_to_num = {'a': 0, 'b': 1, '^': 2}
-y = 'aba'
-z = '^a^b^a^'
-alpha = forward_pass(z, pred, char_to_num)
-plot_forward_probabilities(alpha, alpha_bet_map, z)
+    pred = pred.T
+    alpha_bet_map = {0: 'a', 1: 'b', 2: '^'}
+    char_to_num = {'a': 0, 'b': 1, '^': 2}
+    y = 'aba'
+    z = '^a^b^a^'
+    alpha = forward_pass(z, pred, char_to_num)
+    plot_forward_probabilities(alpha, alpha_bet_map, z)
 
-# Calculate B^-1, all possible ways to say aba in <= 5 time steps
-B_inverse = ['aba', 'abba', 'abbba', 'abbaa', 'abaaa', 'aaba', 'aabba', 'aabaa', 'aaaba']
-for word in B_inverse:
-    if len(word) < 5:
-        filled_words = fill_with_blanks(word)
-        B_inverse.extend(filled_words)
-        B_inverse.remove(word)
+    # Calculate B^-1, all possible ways to say aba in <= 5 time steps
+    B_inverse = ['aba', 'abba', 'abbba', 'abbaa', 'abaaa', 'aaba', 'aabba', 'aabaa', 'aaaba']
+    for word in B_inverse:
+        if len(word) < 5:
+            filled_words = fill_with_blanks(word)
+            B_inverse.extend(filled_words)
+            B_inverse.remove(word)
 
-print(alpha)
-# keep only words in length 5
-B_inverse = [word for word in B_inverse if len(word) == 5]
-prob_aba = sum([calculate_word_probability(alpha, char_to_num, word) for word in B_inverse])
-print(f'Probability of saying "aba" in <= 5 time steps: {prob_aba}')
+    print(alpha)
+    # keep only words in length 5
+    B_inverse = [word for word in B_inverse if len(word) == 5]
+    prob_aba = sum([calculate_word_probability(alpha, char_to_num, word) for word in B_inverse])
+    print(f'Probability of saying "aba" in <= 5 time steps: {prob_aba}')
 
-# Force align
-alpha, backtrace, c, d = ctc_force_align(z, pred, char_to_num)
-print(f'Probability of the most probable path: {c}')
-path = get_most_probable_path(backtrace, alpha, z)
-print(f'Most probable path: {path}')
-plot_path_on_alpha(alpha, path, str(path))
+    # Force align
+    alpha, backtrace, c, d = ctc_force_align(z, pred, char_to_num)
+    print(f'Probability of the most probable path: {c}')
+    path = get_most_probable_path(backtrace, alpha, z)
+    print(f'Most probable path: {path}')
+    plot_path_on_alpha(alpha, path, str(path))
+
+def q7(data):
+    audio = data['audio']
+    acuostic_model_out_probs = data['acoustic_model_out_probs']
+    acuostic_model_out_probs = np.array(acuostic_model_out_probs).T
+    label_mapping = data['label_mapping']
+    gt_text = data['gt_text']
+    text_to_align = data['text_to_align']
+    print(label_mapping)
+    print(gt_text)
+    print(text_to_align)
+    print(acuostic_model_out_probs.shape)
+    num_to_char = label_mapping
+    char_to_num = {v: k for k, v in label_mapping.items()}
+    z = ['^' + c for c in text_to_align]
+    z = ''.join(z) + '^'
+    print(z)
+    alpha = forward_pass(z, np.array(acuostic_model_out_probs), char_to_num)
+    plot_forward_probabilities(alpha, num_to_char, z)
+    # Now force align
+    alpha, backtrace, c, d = ctc_force_align(z, acuostic_model_out_probs, char_to_num)
+    print(f'Probability of the most probable path: {c}')
+    path = get_most_probable_path(backtrace, alpha, z)
+    print(f'Most probable path: {path}')
+    plot_path_on_alpha(alpha, path, str(path))
 
 
-    
+data = pkl.load(open('force_align.pkl', 'rb'))
+# Interpretation of the plot in the path:
+# The y-axis shows the index for the char in the most probable path, the x-axis shows the time step
+# The red dots are where we are in the most probable path at that time step
+q4_5_6()
+q7(data)
+
